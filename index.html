@@ -1,1088 +1,2095 @@
-
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>REPL Analyse</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <title>REPL Analyse</title>
 
-<style>
-:root{
-  --bg:#f2f5fa;
-  --white:#fff;
-  --navy:#172a46;
-  --blue:#2563eb;
-  --line:#dce4ef;
-  --muted:#64748b;
-  --green:#15803d;
-  --red:#b91c1c;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  font:14px Arial,sans-serif;
-  color:#18283f;
-}
-header{
-  background:var(--navy);
-  color:white;
-  padding:23px 30px;
-}
-header h1{margin:0 0 6px;font-size:25px}
-header p{margin:0;color:#c7d3e5}
-main{max-width:1450px;margin:auto;padding:20px}
-.panel{
-  background:white;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:20px;
-  margin-bottom:17px;
-}
-h2{font-size:18px;margin:0 0 16px}
-.controls{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  align-items:end;
-}
-.field{display:flex;flex-direction:column;gap:6px}
-label{font-weight:bold;font-size:12px}
-input,select,button{
-  padding:10px;
-  font:inherit;
-  border:1px solid #cbd5e1;
-  border-radius:7px;
-}
-button{
-  background:var(--blue);
-  color:white;
-  border:0;
-  font-weight:bold;
-  cursor:pointer;
-}
-button.secondary{background:#e8eef8;color:#193454}
-button:disabled{opacity:.5;cursor:not-allowed}
-.cards{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
-}
-.card{
-  background:#f3f7fd;
-  padding:16px;
-  border-radius:9px;
-}
-.card small{
-  display:block;
-  color:var(--muted);
-  margin-bottom:8px;
-}
-.card strong{font-size:24px}
-.grid2{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
-}
-.note{
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.6;
-}
-.good{color:var(--green)}
-.bad{color:var(--red)}
-.tablewrap{overflow:auto;max-height:520px}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-}
-th,td{
-  padding:10px;
-  border-bottom:1px solid var(--line);
-  text-align:right;
-  white-space:nowrap;
-}
-th{
-  position:sticky;
-  top:0;
-  background:#eaf0f8;
-  z-index:1;
-}
-th:first-child,td:first-child{text-align:left}
-tr.clickable{cursor:pointer}
-tr.clickable:hover{background:#edf4ff}
-tr.selected{background:#dceaff}
-input[type=range]{
-  width:100%;
-  accent-color:var(--blue);
-}
-.big{
-  font-size:32px;
-  font-weight:bold;
-  color:var(--blue);
-}
-.progress{
-  height:13px;
-  background:#e2e8f0;
-  border-radius:10px;
-  overflow:hidden;
-}
-.progress>div{
-  height:100%;
-  background:var(--green);
-  width:0;
-}
-.tag{
-  display:inline-block;
-  background:#e6efff;
-  color:#1d4ed8;
-  padding:6px 10px;
-  border-radius:20px;
-}
-@media(max-width:800px){
-  .cards,.grid2{grid-template-columns:1fr 1fr}
-}
-@media(max-width:550px){
-  .cards,.grid2{grid-template-columns:1fr}
-  main{padding:10px}
-}
-</style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f2f5fa;
+      --white: #fff;
+      --navy: #172a46;
+      --blue: #2563eb;
+      --line: #dce4ef;
+      --muted: #64748b;
+      --green: #15803d;
+      --red: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      font: 14px Arial, sans-serif;
+      color: #18283f;
+    }
+
+    header {
+      background: var(--navy);
+      color: white;
+      padding: 23px 30px;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 25px;
+    }
+
+    header p {
+      margin: 0;
+      color: #c7d3e5;
+    }
+
+    main {
+      max-width: 1450px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 17px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 16px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    input,
+    select,
+    button {
+      padding: 10px;
+      font: inherit;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+    }
+
+    button {
+      background: var(--blue);
+      color: white;
+      border: 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(0.95);
+    }
+
+    button.secondary {
+      background: #e8eef8;
+      color: #193454;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      background: #f3f7fd;
+      padding: 16px;
+      border-radius: 9px;
+    }
+
+    .card small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card strong {
+      font-size: 24px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .good {
+      color: var(--green);
+    }
+
+    .bad {
+      color: var(--red);
+    }
+
+    .tablewrap {
+      overflow: auto;
+      max-height: 520px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #eaf0f8;
+      z-index: 1;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    tr.clickable {
+      cursor: pointer;
+    }
+
+    tr.clickable:hover {
+      background: #edf4ff;
+    }
+
+    tr.selected {
+      background: #dceaff;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .big {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--blue);
+    }
+
+    .progress {
+      height: 13px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress > div {
+      height: 100%;
+      background: var(--green);
+      width: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #e6efff;
+      color: #1d4ed8;
+      padding: 6px 10px;
+      border-radius: 20px;
+    }
+
+    @media (max-width: 800px) {
+      .cards,
+      .grid2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 550px) {
+      .cards,
+      .grid2 {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        padding: 10px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-<header>
-<h1>REPL Analyse</h1>
-<p>Automatyczna analiza artykułów i symulacja docelowego współczynnika</p>
-</header>
-
-<main>
-
-<section class="panel">
-<h2>1. Import danych</h2>
-<div class="controls">
-  <div class="field">
-    <label>Wybierz plik CSV lub Excel</label>
-    <input type="file" id="file" accept=".csv,.xlsx,.xls">
-  </div>
-  <button class="secondary" onclick="loadDemo()">Dane demonstracyjne</button>
-  <button class="secondary" onclick="clearData()">Wyczyść</button>
-</div>
-<p id="status" class="note">Wybierz plik z danymi REPL.</p>
-</section>
-
-<section class="panel">
-<h2>Filtry daty</h2>
-<p class="note">Zaznacz jeden lub kilka miesięcy i tygodni. Brak zaznaczenia oznacza wszystkie. Filtry działają łącznie na wszystkie wyniki i eksporty.</p>
-<div class="controls" style="align-items:start">
- <div class="field"><label for="months">Miesiące (z rokiem)</label><select id="months" multiple size="6" onchange="applyFilters()" style="min-width:220px"></select><small>Przytrzymaj Ctrl, aby wybrać kilka.</small></div>
- <div class="field"><label for="weeks">Tygodnie (ISO)</label><select id="weeks" multiple size="6" onchange="applyFilters()" style="min-width:220px"></select><small>Przytrzymaj Ctrl, aby wybrać kilka.</small></div>
- <button class="secondary" onclick="resetFilters()">Pokaż wszystkie dane</button>
-</div>
-<p id="filterStatus" class="note">Wczytaj dane, aby wybrać daty.</p>
-</section>
-
-<section class="panel">
-<h2>2. Wyniki magazynu</h2>
-<div class="cards">
-  <div class="card">
-    <small>Unikalne partno</small>
-    <strong id="articles">—</strong>
-  </div>
-  <div class="card">
-    <small>Suma długości przejazdów</small>
-    <strong id="distance">—</strong>
-  </div>
-  <div class="card">
-    <small>Liczba TAleja</small>
-    <strong id="tasks">—</strong>
-  </div>
-  <div class="card">
-    <small>Aktualny KPI</small>
-    <strong id="kpi">—</strong>
-  </div>
-</div>
-</section>
-
-<section class="panel">
-<h2>3. Analiza według Pick Zone</h2>
-<div class="controls" style="margin-bottom:15px">
-  <div class="field">
-    <label>Zakres optymalizacji</label>
-    <select id="zone" onchange="changeZone()">
-      <option value="ALL">Cały magazyn</option>
-    </select>
-  </div>
-  <button onclick="exportZones()">Eksportuj analizę Pick Zone do Excela</button>
-</div>
-<div class="tablewrap">
-<table>
-<thead>
-<tr>
-  <th>Pick Zone</th>
-  <th>Unikalne partno</th>
-  <th>Suma długości</th>
-  <th>Liczba TAleja</th>
-  <th>KPI</th>
-  <th>Udział długości %</th>
-</tr>
-</thead>
-<tbody id="zones"></tbody>
-</table>
-</div>
-<p class="note">Kliknij strefę, aby analizować tylko jej artykuły.</p>
-</section>
-
-<section class="panel">
-<h2>4. Automatyczny symulator KPI</h2>
-<div class="grid2">
-<div>
-  <div class="card">
-    <small>Aktualny współczynnik wybranego zakresu</small>
-    <strong id="scopeKpi">—</strong>
-  </div>
-  <p><b>Wybierz docelowy współczynnik</b></p>
-  <div class="big" id="targetDisplay">—</div>
-  <input type="range" id="targetSlider"
-    min="0" max="10" step="0.01" value="5"
-    oninput="sliderChanged()">
-  <div class="controls" style="margin-top:12px">
-    <div class="field">
-      <label>Możesz również wpisać dokładną wartość</label>
-      <input type="number" id="targetInput"
-        min="0" step="0.01" value="5"
-        oninput="inputChanged()">
-    </div>
-  </div>
-  <p class="note">
-    Nie ustawiasz procentu redukcji. Aplikacja automatycznie
-    oblicza wymaganą zmianę i wybiera artykuły.
-  </p>
-</div>
-<div>
-  <div class="cards" style="grid-template-columns:1fr 1fr">
-    <div class="card">
-      <small>Wymagana redukcja długości</small>
-      <strong id="required">—</strong>
-    </div>
-    <div class="card">
-      <small>Wynik symulacji</small>
-      <strong id="resultKpi">—</strong>
-    </div>
-    <div class="card">
-      <small>Artykuły do zmiany</small>
-      <strong id="changeCount">—</strong>
-    </div>
-    <div class="card">
-      <small>Status celu</small>
-      <strong id="goalStatus">—</strong>
-    </div>
-  </div>
-</div>
-</div>
-
-<div style="margin-top:20px">
-  <label>Postęp matematycznego osiągnięcia celu</label>
-  <div class="progress" style="margin-top:10px">
-    <div id="progressBar"></div>
-  </div>
-</div>
-<div class="controls" style="margin-top:18px">
-  <button onclick="calculate()">Przelicz automatycznie</button>
-  <button onclick="exportExcel()">Eksport Excel — plan optymalizacji</button>
-</div>
-<p id="info" class="note"></p>
-</section>
-
-<section class="panel">
-<h2>5. Artykuły wytypowane do zmiany</h2>
-<div class="controls" style="margin-bottom:14px">
-  <div class="field">
-    <label>Wyszukaj partno</label>
-    <input id="search" placeholder="Numer artykułu" oninput="renderPlan()">
-  </div>
-  <div class="field">
-    <label>Widok</label>
-    <select id="filter" onchange="renderPlan()">
-      <option value="changed">Tylko do zmiany</option>
-      <option value="all">Wszystkie artykuły</option>
-    </select>
-  </div>
-  <div class="field">
-    <label>Liczba rekordów</label>
-    <select id="limit" onchange="renderPlan()">
-      <option value="50">TOP 50</option>
-      <option value="100">TOP 100</option>
-      <option value="500">TOP 500</option>
-      <option value="999999">Wszystkie</option>
-    </select>
-  </div>
-</div>
-<div class="tablewrap">
-<table>
-<thead>
-<tr>
-  <th>partno</th>
-  <th>Pick Zone</th>
-  <th>Obecna długość</th>
-  <th>TAleja</th>
-  <th>Obecny KPI</th>
-  <th>Redukcja długości</th>
-  <th>Nowa długość</th>
-  <th>Nowy KPI</th>
-  <th>Zmiana %</th>
-</tr>
-</thead>
-<tbody id="plan"></tbody>
-</table>
-</div>
-</section>
-
-<section class="panel">
-<h2>6. Podsumowanie optymalizacji</h2>
-<div id="summary" class="note">Zaimportuj dane.</div>
-</section>
-
-<section class="panel">
-<h2>7. Informacja o modelu</h2>
-<p class="note">
-Ten prototyp wyznacza matematyczny plan redukcji długości przejazdów
-przy niezmienionej liczbie TAleja. Automatycznie wybiera artykuły
-o największej sumie długości przejazdów i przypisuje im
-wymaganą redukcję, bez ręcznego ustawiania procentów.
-</p>
-<p class="note">
-Model nie posiada jeszcze danych o lokalizacjach, odległościach
-między alejkami ani ograniczeniach operacyjnych.
-Dlatego propozycje stanowią cele redukcji do weryfikacji,
-a nie potwierdzone fizycznie zmiany. Nie należy wprowadzać
-ich bezpośrednio do WMS.
-</p>
-</section>
-
-</main>
-
-<script>
-"use strict";
-
-let DATA=[];
-let SOURCE=[];
-
-let PLAN=[];
-let RESULT=null;
-let SCOPE="ALL";
-
-const el=id=>document.getElementById(id);
-
-const fmt=(n,d=2)=>Number.isFinite(n)
- ?n.toLocaleString("pl-PL",{
-   minimumFractionDigits:d,
-   maximumFractionDigits:d
-  })
- :"—";
-
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({
- "&":"&amp;",
- "<":"&lt;",
- ">":"&gt;",
- '"':"&quot;",
- "'":"&#39;"
-}[c]));
-
-const numeric=v=>{
- if(typeof v==="number")return v;
- let s=String(v??"").trim().replace(/\s/g,"");
- if(!s)return NaN;
- if(s.includes(",")&&s.includes("."))
-  s=s.replace(/\./g,"").replace(",",".");
- else s=s.replace(",",".");
- return Number(s);
-};
-
-// POPRAWKA: obsługa polskich znaków, w tym ł i Ł.
-const norm=s=>String(s??"")
- .replace(/ł/g,"l")
- .replace(/Ł/g,"L")
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g,"")
- .toLowerCase()
- .replace(/[^a-z0-9]/g,"");
-
-// Parser CSV z obsługą przecinka, średnika, tabulatora i cudzysłowów.
-function parseCSV(text){
- text=text.replace(/^\uFEFF/,"");
-
- const first=text.split(/\r?\n/)[0]||"";
- const candidates=[",",";","\t"];
- const sep=candidates.sort((a,b)=>
-  first.split(b).length-first.split(a).length
- )[0];
-
- const records=[];
- let row=[],field="",quoted=false;
-
- for(let i=0;i<text.length;i++){
-  const c=text[i];
-
-  if(c==='"'){
-   if(quoted&&text[i+1]==='"'){
-    field+='"';
-    i++;
-   }else{
-    quoted=!quoted;
-   }
-  }else if(c===sep&&!quoted){
-   row.push(field);
-   field="";
-  }else if((c==="\n"||c==="\r")&&!quoted){
-   if(c==="\r"&&text[i+1]==="\n")i++;
-   row.push(field);
-   field="";
-   if(row.some(x=>x.trim()!==""))records.push(row);
-   row=[];
-  }else{
-   field+=c;
-  }
- }
-
- row.push(field);
- if(row.some(x=>x.trim()!==""))records.push(row);
-
- if(records.length<2)
-  throw Error("Brak wierszy danych w CSV.");
-
- const headers=records.shift();
-
- return records.map(r=>Object.fromEntries(
-  headers.map((h,i)=>[h,r[i]??""])
- ));
-}
-
-function parseDate(v){
- if(v instanceof Date && !isNaN(v)) return [v.getFullYear(),v.getMonth()+1,v.getDate()];
- if(typeof v === "number" && Number.isFinite(v)) { const d=new Date(Date.UTC(1899,11,30)+Math.floor(v)*86400000); return [d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()]; }
- const t=String(v??"").trim(); let m=t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})(?:\s.*)?$/);
- let a=m?[+m[3],+m[2],+m[1]]:null;
- if(!a){m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T].*)?$/); if(m)a=[+m[1],+m[2],+m[3]];}
- if(!a)return null;
- const d=new Date(Date.UTC(a[0],a[1]-1,a[2]));
- return d.getUTCFullYear()===a[0]&&d.getUTCMonth()+1===a[1]&&d.getUTCDate()===a[2]?a:null;
-}
-function dateInfo(v){
- const a=parseDate(v); if(!a)return {month:null,week:null};
- const d=new Date(Date.UTC(a[0],a[1]-1,a[2]));
- const month=`${a[0]}-${String(a[1]).padStart(2,"0")}`;
- d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));
- const year=d.getUTCFullYear(), first=new Date(Date.UTC(year,0,1));
- const week=Math.ceil(((d-first)/86400000+1)/7);
- return {month,week:`${year}-W${String(week).padStart(2,"0")}`};
-}
-function aggregate(rows){
- const map=new Map();
- for(const r of rows){const key=JSON.stringify([r.partno,r.zone]); if(!map.has(key))map.set(key,{partno:r.partno,zone:r.zone,distance:0,tasks:0}); const x=map.get(key);x.distance+=r.distance;x.tasks+=r.tasks;}
- return [...map.values()];
-}
-function setupFilters(){
- const months=[...new Set(SOURCE.map(r=>r.month).filter(Boolean))].sort();
- const weeks=[...new Set(SOURCE.map(r=>r.week).filter(Boolean))].sort();
- el("months").innerHTML=months.map(m=>`<option value="${m}">${m}</option>`).join("");
- el("weeks").innerHTML=weeks.map(w=>`<option value="${w}">Tydzień ${Number(w.slice(-2))} / ${w.slice(0,4)}</option>`).join("");
-}
-function filterDescription(){
- const months=[...el("months").selectedOptions].map(o=>o.value);
- const weeks=[...el("weeks").selectedOptions].map(o=>o.value);
- return {months:months.length?months.join(", "):"Wszystkie",weeks:weeks.length?weeks.join(", "):"Wszystkie"};
-}
-function applyFilters(){
- const months=[...el("months").selectedOptions].map(o=>o.value);
- const weeks=[...el("weeks").selectedOptions].map(o=>o.value);
- const filtered=SOURCE.filter(r=>(!months.length||months.includes(r.month))&&(!weeks.length||weeks.includes(r.week)));
- DATA=aggregate(filtered);
- const invalid=SOURCE.filter(r=>!r.month).length;
- el("filterStatus").textContent=`Wybrano ${filtered.length} z ${SOURCE.length} wierszy. Wiersze bez poprawnej daty: ${invalid}${invalid?" (uwzględniane tylko bez filtrów daty)":""}.`;
- PLAN=[]; RESULT=null;
- if(!DATA.length){ clearResults(); el("filterStatus").textContent+=" Brak danych dla wybranych filtrów."; return; }
- initialize();
-}
-function resetFilters(){for(const o of el("months").options)o.selected=false; for(const o of el("weeks").options)o.selected=false; applyFilters();}
-function clearResults(){
- el("zone").innerHTML='<option value="ALL">Cały magazyn</option>'; el("zones").innerHTML="";el("plan").innerHTML="";el("summary").textContent="Brak danych dla wybranych filtrów.";el("info").textContent="";el("progressBar").style.width="0";
- ["articles","distance","tasks","kpi","scopeKpi","targetDisplay","required","resultKpi","changeCount","goalStatus"].forEach(id=>el(id).textContent="—");
-}
-
-// POPRAWKA: rozpoznawanie faktycznych nazw kolumn.
-function normalizeData(raw){
- if(!raw.length)throw Error("Brak danych.");
-
- const headers=Object.keys(raw[0]);
- const find=variants=>headers.find(h=>variants.includes(norm(h)));
-
- const cPart=find([
-  "partno",
-  "article"
- ]);
-
- const cZone=find([
-  "pickzone"
- ]);
-
- const cDist=find([
-  "sumaelementowdlprzejazdu",
-  "dlprzejazdu",
-  "sumadlprzejazdu"
- ]);
-
- const cTasks=find([
-  "liczbaelementowtaleja",
-  "taleja",
-  "liczbataleja"
- ]);
-
- if(!cPart||!cZone||!cDist||!cTasks){
-  throw Error(
-   "Nie rozpoznano kolumn. Nagłówki: "+
-   headers.join(" | ")
-  );
- }
-
- const rows=[];
- let skipped=0;
- const cDate=find(["datregkopia","datreg","data","datarejestracji","regdate"]);
-
- for(const r of raw){
-  const partno=String(r[cPart]??"").trim();
-  const zone=String(r[cZone]??"").trim()||"(BRAK STREFY)";
-  const distance=numeric(r[cDist]);
-  const tasks=numeric(r[cTasks]);
-
-  if(!partno||
-     !Number.isFinite(distance)||
-     !Number.isFinite(tasks)||
-     distance<0||tasks<0){
-   skipped++;
-   continue;
-  }
-
-  rows.push({partno,zone,distance,tasks,...dateInfo(cDate?r[cDate]:null)});
- }
- if(!rows.length)throw Error("Nie znaleziono poprawnych rekordów.");
- return {rows,skipped,hasDate:!!cDate};
-}
-
-async function readFile(file){
- const name=file.name.toLowerCase();
-
- if(name.endsWith(".csv")){
-  const bytes=await file.arrayBuffer();
-  let text=new TextDecoder("utf-8").decode(bytes);
-
-  if(text.includes("\uFFFD")){
-   text=new TextDecoder("windows-1250").decode(bytes);
-  }
-
-  return parseCSV(text);
- }
-
- if(typeof XLSX==="undefined")
-  throw Error("Biblioteka Excel nie jest dostępna. Spróbuj CSV.");
-
- const bytes=await file.arrayBuffer();
- const wb=XLSX.read(bytes,{type:"array"});
-
- return XLSX.utils.sheet_to_json(
-  wb.Sheets[wb.SheetNames[0]],{
-   defval:"",
-   raw:false
-  }
- );
-}
-
-el("file").addEventListener("change",async e=>{
- const file=e.target.files[0];
- if(!file)return;
-
- try{
-  el("status").textContent="Wczytywanie...";
-
-  const raw=await readFile(file);
-  const parsed=normalizeData(raw);
-
-  SOURCE=parsed.rows;
-  setupFilters();
-  applyFilters();
-
-  el("status").textContent=
-   `Zaimportowano ${SOURCE.length} wierszy. Pominięte rekordy: ${parsed.skipped}.`+
-   (parsed.hasDate?"":" Nie znaleziono kolumny daty – filtry daty są niedostępne.");
-
- }catch(err){
-  el("status").textContent="Błąd: "+err.message;
-  console.error(err);
- }
-});
-
-function loadDemo(){
- const sample=[
-  ["20426808","DL",85,8],
-  ["00458206","PN",80,12],
-  ["30489490","SL",73,5],
-  ["00223878","SW",72,4],
-  ["00311059","SL",68,5],
-  ["30551236","SW",62,5],
-  ["40559487","SW",59,5],
-  ["10572876","LO",54,6],
-  ["10458220","PN",48,8],
-  ["70213569","MT",46,7],
-  ["30426836","R1",44,4],
-  ["10277984","FN",42,6],
-  ["30183989","PN",42,10],
-  ["60559486","SW",42,3],
-  ["50551235","SW",38,3],
-  ["00417621","SL",37,9]
- ];
-
- SOURCE=sample.map(([partno,zone,distance,tasks])=>({
-  partno,zone,distance,tasks,month:null,week:null
- }));
- setupFilters();
- applyFilters();
-
- el("status").textContent="Wczytano dane demonstracyjne bez dat.";
-}
-
-function stats(rows){
- const distance=rows.reduce((s,r)=>s+r.distance,0);
- const tasks=rows.reduce((s,r)=>s+r.tasks,0);
-
- return {
-  distance,
-  tasks,
-  articles:new Set(rows.map(r=>r.partno)).size,
-  kpi:tasks>0?distance/tasks:NaN
- };
-}
-
-function groupZones(){
- const groups=new Map();
-
- for(const r of DATA){
-  if(!groups.has(r.zone))
-   groups.set(r.zone,[]);
-
-  groups.get(r.zone).push(r);
- }
-
- return [...groups].map(([zone,rows])=>({
-  zone,
-  ...stats(rows)
- })).sort((a,b)=>b.distance-a.distance);
-}
-
-function scopeRows(){
- return SCOPE==="ALL"
-  ?DATA
-  :DATA.filter(r=>r.zone===SCOPE);
-}
-
-function initialize(){
- SCOPE="ALL";
-
- const zones=groupZones();
- const select=el("zone");
-
- select.innerHTML=
-  '<option value="ALL">Cały magazyn</option>';
-
- zones.forEach(z=>{
-  const option=document.createElement("option");
-  option.value=z.zone;
-  option.textContent=z.zone;
-  select.appendChild(option);
- });
-
- const current=stats(DATA).kpi;
- const max=Math.max(1,Math.ceil(current*1.5));
- const target=Number.isFinite(current)?current*.8:0;
-
- el("targetSlider").max=max;
- el("targetSlider").value=target;
- el("targetInput").value=target.toFixed(2);
-
- render();
-}
-
-function changeZone(){
- SCOPE=el("zone").value;
-
- const current=stats(scopeRows()).kpi;
-
- if(Number.isFinite(current)){
-  el("targetSlider").max=
-   Math.max(1,Math.ceil(current*1.5));
-
-  el("targetSlider").value=current*.8;
-  el("targetInput").value=(current*.8).toFixed(2);
- }
-
- render();
-}
-
-function selectZone(zone){
- el("zone").value=zone;
- changeZone();
-}
-
-function sliderChanged(){
- el("targetInput").value=el("targetSlider").value;
- calculate();
-}
-
-function inputChanged(){
- const v=numeric(el("targetInput").value);
- if(!Number.isFinite(v)||v<0)return;
-
- el("targetSlider").max=Math.max(
-  Number(el("targetSlider").max),
-  Math.ceil(v),
-  1
- );
-
- el("targetSlider").value=v;
- calculate();
-}
-
-function calculate(){
- if(!DATA.length)return;
-
- const rows=scopeRows();
- const base=stats(rows);
- const target=numeric(el("targetInput").value);
-
- if(!Number.isFinite(target)||target<0){
-  el("info").textContent="Wpisz poprawny współczynnik.";
-  return;
- }
-
- if(base.tasks<=0){
-  el("info").textContent=
-   "Nie można obliczyć KPI: suma TAleja wynosi zero.";
-  return;
- }
-
- const targetDistance=target*base.tasks;
- const required=Math.max(0,base.distance-targetDistance);
-
- // Automatyczny ranking według największej sumy długości.
- const ranked=[...rows].sort((a,b)=>
-  b.distance-a.distance||
-  a.partno.localeCompare(b.partno)
- );
-
- let remaining=required;
-
- PLAN=ranked.map(r=>{
-  const reduction=Math.min(
-   r.distance,
-   Math.max(0,remaining)
-  );
-
-  remaining=Math.max(0,remaining-reduction);
-
-  const newDistance=Math.max(0,r.distance-reduction);
-
-  return {
-   ...r,
-   reduction,
-   newDistance,
-   oldKpi:r.tasks>0?r.distance/r.tasks:NaN,
-   newKpi:r.tasks>0?newDistance/r.tasks:NaN,
-   reductionPct:r.distance>0
-    ?100*reduction/r.distance
-    :0
-  };
- });
-
- const saved=PLAN.reduce((s,r)=>s+r.reduction,0);
- const newDistance=base.distance-saved;
- const projected=newDistance/base.tasks;
- const count=PLAN.filter(r=>r.reduction>1e-8).length;
- const achieved=projected<=target+1e-8;
-
- const progress=required===0
-  ?100
-  :Math.min(100,100*saved/required);
-
- RESULT={
-  base,
-  target,
-  required,
-  saved,
-  newDistance,
-  projected,
-  count,
-  achieved,
-  zone:SCOPE
- };
-
- el("scopeKpi").textContent=fmt(base.kpi);
- el("targetDisplay").textContent=fmt(target);
- el("required").textContent=fmt(required);
- el("resultKpi").textContent=fmt(projected);
- el("changeCount").textContent=fmt(count,0);
- el("goalStatus").textContent=
-  achieved?"OSIĄGNIĘTY*":"NIEOSIĄGNIĘTY";
-
- el("goalStatus").className=achieved?"good":"bad";
- el("progressBar").style.width=progress+"%";
-
- el("info").textContent=required===0
-  ?"Aktualny współczynnik już spełnia wybrany cel."
-  :"*Cel osiągnięty matematycznie. Proponowane redukcje wymagają weryfikacji operacyjnej.";
-
- el("summary").innerHTML=`
-  <p><b>Zakres:</b> ${esc(SCOPE==="ALL"?"Cały magazyn":SCOPE)}</p>
-  <p>Aktualny KPI: <b>${fmt(base.kpi)}</b></p>
-  <p>Docelowy KPI: <b>${fmt(target)}</b></p>
-  <p>Wynik po zmianach: <b>${fmt(projected)}</b></p>
-  <p>Aktualna suma długości: <b>${fmt(base.distance)}</b></p>
-  <p>Planowana suma długości: <b>${fmt(newDistance)}</b></p>
-  <p>Wymagana redukcja: <b>${fmt(required)}</b></p>
-  <p>Liczba wytypowanych artykułów: <b>${fmt(count,0)}</b></p>
-  <p class="bad"><b>Uwaga:</b> algorytm nie potwierdza,
-  że takie skrócenie tras jest fizycznie możliwe.
-  W skrajnym przypadku może proponować redukcję długości
-  artykułu do zera. Jest to wyłącznie matematyczny wariant
-  osiągnięcia celu.</p>`;
-
- renderPlan();
-}
-
-function renderPlan(){
- const search=el("search").value.trim().toLowerCase();
- const filter=el("filter").value;
- const limit=Number(el("limit").value);
-
- const rows=PLAN.filter(r=>
-  r.partno.toLowerCase().includes(search)&&
-  (filter==="all"||r.reduction>1e-8)
- ).slice(0,limit);
-
- el("plan").innerHTML=rows.map(r=>`
- <tr>
-  <td>${esc(r.partno)}</td>
-  <td>${esc(r.zone)}</td>
-  <td>${fmt(r.distance)}</td>
-  <td>${fmt(r.tasks,0)}</td>
-  <td>${fmt(r.oldKpi)}</td>
-  <td>${fmt(r.reduction)}</td>
-  <td>${fmt(r.newDistance)}</td>
-  <td>${fmt(r.newKpi)}</td>
-  <td>${fmt(r.reductionPct)}%</td>
- </tr>`).join("");
-}
-
-function renderZones(){
- const total=stats(DATA);
-
- el("zones").innerHTML=groupZones().map(z=>`
- <tr class="clickable ${SCOPE===z.zone?"selected":""}"
- data-zone="${esc(z.zone)}">
-  <td>${esc(z.zone)}</td>
-  <td>${fmt(z.articles,0)}</td>
-  <td>${fmt(z.distance,0)}</td>
-  <td>${fmt(z.tasks,0)}</td>
-  <td>${fmt(z.kpi)}</td>
-  <td>${fmt(total.distance?100*z.distance/total.distance:0)}%</td>
- </tr>`).join("");
-
- el("zones").querySelectorAll("tr").forEach(tr=>{
-  tr.addEventListener("click",()=>{
-   selectZone(tr.dataset.zone);
-  });
- });
-}
-
-function render(){
- if(!DATA.length)return;
-
- const s=stats(DATA);
-
- el("articles").textContent=fmt(s.articles,0);
- el("distance").textContent=fmt(s.distance,0);
- el("tasks").textContent=fmt(s.tasks,0);
- el("kpi").textContent=fmt(s.kpi);
-
- renderZones();
- calculate();
-}
-
-function exportZones(){
- if(!DATA.length){alert("Najpierw zaimportuj dane i wybierz zakres zawierający wyniki.");return;}
- if(typeof XLSX==="undefined"){alert("Biblioteka Excel jest niedostępna. Sprawdź połączenie z internetem.");return;}
- const f=filterDescription(), total=stats(DATA);
- const rows=[["Pick Zone","Unikalne partno","Suma długości","Liczba TAleja","KPI","Udział długości %"]];
- for(const z of groupZones())rows.push([z.zone,z.articles,z.distance,z.tasks,Number.isFinite(z.kpi)?z.kpi:null,total.distance?z.distance/total.distance:0]);
- const ws=XLSX.utils.aoa_to_sheet(rows); ws["!cols"]=[{wch:20},{wch:20},{wch:20},{wch:18},{wch:12},{wch:20}];
- for(let i=2;i<=rows.length;i++)if(ws["F"+i])ws["F"+i].z="0.00%";
- ws["!autofilter"]={ref:`A1:F${rows.length}`};
- const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Pick Zone");
- const meta=XLSX.utils.aoa_to_sheet([["Filtr","Wartość"],["Miesiące",f.months],["Tygodnie",f.weeks]]);meta["!cols"]=[{wch:20},{wch:65}];XLSX.utils.book_append_sheet(wb,meta,"Filtry");
- XLSX.writeFile(wb,"REPL_Analiza_Pick_Zone.xlsx");
-}
-
-function exportExcel(){
- if(!RESULT){
-  alert("Najpierw zaimportuj dane.");
-  return;
- }
-
- if(typeof XLSX==="undefined"){
-  alert("Biblioteka XLSX jest niedostępna.");
-  return;
- }
-
- const r=RESULT;
- const wb=XLSX.utils.book_new();
-
- const summary=[
-  ["Parametr","Wartość"],
-  ["Zakres",r.zone],
-  ["Miesiące",filterDescription().months],
-  ["Tygodnie",filterDescription().weeks],
-  ["Aktualny KPI",r.base.kpi],
-  ["Docelowy KPI",r.target],
-  ["Wynik symulacji",r.projected],
-  ["Suma długości przed",r.base.distance],
-  ["Suma długości po",r.newDistance],
-  ["Liczba TAleja",r.base.tasks],
-  ["Wymagana redukcja",r.required],
-  ["Wytypowane artykuły",r.count],
-  ["Status","Symulacja matematyczna"]
- ];
-
- const details=[[
-  "partno",
-  "Pick Zone",
-  "Obecna długość",
-  "Liczba TAleja",
-  "Obecny KPI",
-  "Wymagana redukcja",
-  "Nowa długość",
-  "Nowy KPI",
-  "Zmiana %",
-  "Status"
- ]];
-
- for(const x of PLAN.filter(x=>x.reduction>1e-8)){
-  details.push([
-   x.partno,
-   x.zone,
-   x.distance,
-   x.tasks,
-   Number.isFinite(x.oldKpi)?x.oldKpi:"",
-   x.reduction,
-   x.newDistance,
-   Number.isFinite(x.newKpi)?x.newKpi:"",
-   x.reductionPct,
-   "Do weryfikacji operacyjnej"
-  ]);
- }
-
- const zoneRows=[[
-  "Pick Zone",
-  "Unikalne partno",
-  "Suma długości",
-  "Liczba TAleja",
-  "KPI"
- ]];
-
- for(const z of groupZones()){
-  zoneRows.push([
-   z.zone,
-   z.articles,
-   z.distance,
-   z.tasks,
-   Number.isFinite(z.kpi)?z.kpi:""
-  ]);
- }
-
- const assumptions=[
-  ["Założenie","Opis"],
-  ["Metoda","Automatyczna alokacja wymaganej redukcji"],
-  ["Ranking","Malejąca suma długości artykułu"],
-  ["Liczba TAleja","Stała podczas symulacji"],
-  ["Ograniczenia lokalizacyjne","Brak danych"],
-  ["Wykonalność","Niepotwierdzona"],
-  ["Znaczenie planu","Matematyczny cel redukcji, nie zmiana WMS"]
- ];
-
- function addSheet(name,rows){
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-
-  ws["!cols"]=rows[0].map(h=>({
-   wch:Math.min(42,Math.max(16,String(h).length+3))
-  }));
-
-  XLSX.utils.book_append_sheet(wb,ws,name);
-  return ws;
- }
-
- addSheet("Podsumowanie",summary);
- const ws=addSheet("Plan zmian",details);
- addSheet("Pick Zone",zoneRows);
- addSheet("Założenia",assumptions);
-
- // Zachowanie zer wiodących w partno.
- for(let i=2;i<=details.length;i++){
-  const cell=ws["A"+i];
-
-  if(cell){
-   cell.t="s";
-   cell.v=String(cell.v);
-   cell.z="@";
-  }
- }
-
- XLSX.writeFile(wb,"REPL_Plan_Optymalizacji.xlsx");
-}
-
-function clearData(){
- SOURCE=[];
- setupFilters();
- el("filterStatus").textContent="Wczytaj dane, aby wybrać daty.";
- DATA=[];
- PLAN=[];
- RESULT=null;
- SCOPE="ALL";
-
- el("file").value="";
- el("zone").innerHTML=
-  '<option value="ALL">Cały magazyn</option>';
-
- el("zones").innerHTML="";
- el("plan").innerHTML="";
- el("status").textContent="Wybierz plik z danymi REPL.";
- el("summary").textContent="Zaimportuj dane.";
- el("info").textContent="";
- el("progressBar").style.width="0";
-
- [
-  "articles",
-  "distance",
-  "tasks",
-  "kpi",
-  "scopeKpi",
-  "targetDisplay",
-  "required",
-  "resultKpi",
-  "changeCount",
-  "goalStatus"
- ].forEach(id=>{
-  el(id).textContent="—";
- });
-}
-</script>
+
+  <header>
+    <h1>REPL Analyse</h1>
+    <p>Automatyczna analiza artykułów i symulacja docelowego współczynnika</p>
+  </header>
+
+  <main>
+
+    <!-- 1. IMPORT DANYCH -->
+
+    <section class="panel">
+      <h2>1. Import danych</h2>
+
+      <div class="controls">
+
+        <div class="field">
+          <label for="file">Wybierz plik CSV lub Excel</label>
+          <input type="file" id="file" accept=".csv,.xlsx,.xls">
+        </div>
+
+        <button class="secondary" onclick="loadDemo()">
+          Dane demonstracyjne
+        </button>
+
+        <button class="secondary" onclick="clearData()">
+          Wyczyść
+        </button>
+
+      </div>
+
+      <p id="status" class="note">
+        Wybierz plik z danymi REPL.
+      </p>
+    </section>
+
+    <!-- FILTRY DATY -->
+
+    <section class="panel">
+      <h2>Filtry daty</h2>
+
+      <p class="note">
+        Zaznacz jeden lub kilka miesięcy i tygodni. Brak zaznaczenia oznacza
+        wszystkie. Filtry działają łącznie na wszystkie wyniki i eksporty.
+      </p>
+
+      <div class="controls" style="align-items: start;">
+
+        <div class="field">
+          <label for="months">Miesiące (z rokiem)</label>
+
+          <select
+            id="months"
+            multiple
+            size="6"
+            onchange="applyFilters()"
+            style="min-width: 220px;"
+          ></select>
+
+          <small>Przytrzymaj Ctrl, aby wybrać kilka.</small>
+        </div>
+
+        <div class="field">
+          <label for="weeks">Tygodnie (ISO)</label>
+
+          <select
+            id="weeks"
+            multiple
+            size="6"
+            onchange="applyFilters()"
+            style="min-width: 220px;"
+          ></select>
+
+          <small>Przytrzymaj Ctrl, aby wybrać kilka.</small>
+        </div>
+
+        <button class="secondary" onclick="resetFilters()">
+          Pokaż wszystkie dane
+        </button>
+
+      </div>
+
+      <p id="filterStatus" class="note">
+        Wczytaj dane, aby wybrać daty.
+      </p>
+    </section>
+
+    <!-- 2. WYNIKI MAGAZYNU -->
+
+    <section class="panel">
+      <h2>2. Wyniki magazynu</h2>
+
+      <div class="cards">
+
+        <div class="card">
+          <small>Unikalne partno</small>
+          <strong id="articles">—</strong>
+        </div>
+
+        <div class="card">
+          <small>Suma długości przejazdów</small>
+          <strong id="distance">—</strong>
+        </div>
+
+        <div class="card">
+          <small>Liczba TAleja</small>
+          <strong id="tasks">—</strong>
+        </div>
+
+        <div class="card">
+          <small>Aktualny KPI</small>
+          <strong id="kpi">—</strong>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. ANALIZA PICK ZONE -->
+
+    <section class="panel">
+      <h2>3. Analiza według Pick Zone</h2>
+
+      <div class="controls" style="margin-bottom: 15px;">
+
+        <div class="field">
+          <label for="zone">Zakres optymalizacji</label>
+
+          <select id="zone" onchange="changeZone()">
+            <option value="ALL">Cały magazyn</option>
+          </select>
+        </div>
+
+        <button onclick="exportZones()">
+          Eksportuj analizę Pick Zone do Excela
+        </button>
+
+      </div>
+
+      <div class="tablewrap">
+        <table>
+
+          <thead>
+            <tr>
+              <th>Pick Zone</th>
+              <th>Unikalne partno</th>
+              <th>Suma długości</th>
+              <th>Liczba TAleja</th>
+              <th>KPI</th>
+              <th>Udział długości %</th>
+            </tr>
+          </thead>
+
+          <tbody id="zones"></tbody>
+
+        </table>
+      </div>
+
+      <p class="note">
+        Kliknij strefę, aby analizować tylko jej artykuły.
+      </p>
+    </section>
+
+    <!-- 4. SYMULATOR KPI -->
+
+    <section class="panel">
+      <h2>4. Automatyczny symulator KPI</h2>
+
+      <div class="grid2">
+
+        <div>
+
+          <div class="card">
+            <small>Aktualny współczynnik wybranego zakresu</small>
+            <strong id="scopeKpi">—</strong>
+          </div>
+
+          <p><b>Wybierz docelowy współczynnik</b></p>
+
+          <div class="big" id="targetDisplay">—</div>
+
+          <input
+            type="range"
+            id="targetSlider"
+            min="0"
+            max="10"
+            step="0.01"
+            value="5"
+            oninput="sliderChanged()"
+          >
+
+          <div class="controls" style="margin-top: 12px;">
+
+            <div class="field">
+              <label for="targetInput">
+                Możesz również wpisać dokładną wartość
+              </label>
+
+              <input
+                type="number"
+                id="targetInput"
+                min="0"
+                step="0.01"
+                value="5"
+                oninput="inputChanged()"
+              >
+            </div>
+
+          </div>
+
+          <p class="note">
+            Nie ustawiasz procentu redukcji. Aplikacja automatycznie
+            oblicza wymaganą zmianę i wybiera artykuły.
+          </p>
+
+        </div>
+
+        <div>
+
+          <div class="cards" style="grid-template-columns: 1fr 1fr;">
+
+            <div class="card">
+              <small>Wymagana redukcja długości</small>
+              <strong id="required">—</strong>
+            </div>
+
+            <div class="card">
+              <small>Wynik symulacji</small>
+              <strong id="resultKpi">—</strong>
+            </div>
+
+            <div class="card">
+              <small>Artykuły do zmiany</small>
+              <strong id="changeCount">—</strong>
+            </div>
+
+            <div class="card">
+              <small>Status celu</small>
+              <strong id="goalStatus">—</strong>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div style="margin-top: 20px;">
+
+        <label>Postęp matematycznego osiągnięcia celu</label>
+
+        <div class="progress" style="margin-top: 10px;">
+          <div id="progressBar"></div>
+        </div>
+
+      </div>
+
+      <div class="controls" style="margin-top: 18px;">
+
+        <button onclick="calculate()">
+          Przelicz automatycznie
+        </button>
+
+        <button onclick="exportExcel()">
+          Eksport Excel — plan optymalizacji
+        </button>
+
+      </div>
+
+      <p id="info" class="note"></p>
+    </section>
+
+    <!-- 5. ARTYKUŁY -->
+
+    <section class="panel">
+      <h2>5. Artykuły wytypowane do zmiany</h2>
+
+      <div class="controls" style="margin-bottom: 14px;">
+
+        <div class="field">
+          <label for="search">Wyszukaj partno</label>
+
+          <input
+            id="search"
+            placeholder="Numer artykułu"
+            oninput="renderPlan()"
+          >
+        </div>
+
+        <div class="field">
+          <label for="filter">Widok</label>
+
+          <select id="filter" onchange="renderPlan()">
+            <option value="changed">Tylko do zmiany</option>
+            <option value="all">Wszystkie artykuły</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="limit">Liczba rekordów</label>
+
+          <select id="limit" onchange="renderPlan()">
+            <option value="50">TOP 50</option>
+            <option value="100">TOP 100</option>
+            <option value="500">TOP 500</option>
+            <option value="all">Wszystkie</option>
+          </select>
+        </div>
+
+        <!-- NOWY PRZYCISK EKSPORTU TABELI -->
+
+        <button onclick="exportVisiblePlan()">
+          Eksportuj tabelę do Excela
+        </button>
+
+      </div>
+
+      <p class="note">
+        Eksport uwzględnia aktualne wyszukiwanie, wybrany widok oraz
+        liczbę rekordów. Aby pobrać wszystkie artykuły, wybierz
+        „Wszystkie artykuły” oraz „Wszystkie”.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+
+          <thead>
+            <tr>
+              <th>partno</th>
+              <th>Pick Zone</th>
+              <th>Obecna długość</th>
+              <th>TAleja</th>
+              <th>Obecny KPI</th>
+              <th>Redukcja długości</th>
+              <th>Nowa długość</th>
+              <th>Nowy KPI</th>
+              <th>Zmiana %</th>
+            </tr>
+          </thead>
+
+          <tbody id="plan"></tbody>
+
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. PODSUMOWANIE -->
+
+    <section class="panel">
+      <h2>6. Podsumowanie optymalizacji</h2>
+
+      <div id="summary" class="note">
+        Zaimportuj dane.
+      </div>
+    </section>
+
+    <!-- 7. INFORMACJA O MODELU -->
+
+    <section class="panel">
+      <h2>7. Informacja o modelu</h2>
+
+      <p class="note">
+        Ten prototyp wyznacza matematyczny plan redukcji długości przejazdów
+        przy niezmienionej liczbie TAleja. Automatycznie wybiera artykuły
+        o największej sumie długości przejazdów i przypisuje im wymaganą
+        redukcję, bez ręcznego ustawiania procentów.
+      </p>
+
+      <p class="note">
+        Model nie posiada jeszcze danych o lokalizacjach, odległościach
+        między alejkami ani ograniczeniach operacyjnych. Dlatego propozycje
+        stanowią cele redukcji do weryfikacji, a nie potwierdzone fizycznie
+        zmiany. Nie należy wprowadzać ich bezpośrednio do WMS.
+      </p>
+    </section>
+
+  </main>
+
+  <script>
+    "use strict";
+
+    let DATA = [];
+    let SOURCE = [];
+
+    let PLAN = [];
+    let RESULT = null;
+    let SCOPE = "ALL";
+
+    const el = id => document.getElementById(id);
+
+    const fmt = (n, d = 2) => Number.isFinite(n)
+      ? n.toLocaleString("pl-PL", {
+          minimumFractionDigits: d,
+          maximumFractionDigits: d
+        })
+      : "—";
+
+    const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c]));
+
+    const numeric = v => {
+      if (typeof v === "number") return v;
+
+      let s = String(v ?? "")
+        .trim()
+        .replace(/\s/g, "");
+
+      if (!s) return NaN;
+
+      if (s.includes(",") && s.includes(".")) {
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else {
+        s = s.replace(",", ".");
+      }
+
+      return Number(s);
+    };
+
+    // Rozpoznawanie polskich znaków, w tym ł i Ł.
+    const norm = s => String(s ?? "")
+      .replace(/ł/g, "l")
+      .replace(/Ł/g, "L")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+    // Parser CSV: przecinek, średnik, tabulator i cudzysłowy.
+    function parseCSV(text) {
+      text = text.replace(/^\uFEFF/, "");
+
+      const first = text.split(/\r?\n/)[0] || "";
+
+      const candidates = [",", ";", "\t"];
+
+      const sep = candidates.sort(
+        (a, b) => first.split(b).length - first.split(a).length
+      )[0];
+
+      const records = [];
+
+      let row = [];
+      let field = "";
+      let quoted = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+
+        if (c === '"') {
+          if (quoted && text[i + 1] === '"') {
+            field += '"';
+            i++;
+          } else {
+            quoted = !quoted;
+          }
+
+        } else if (c === sep && !quoted) {
+          row.push(field);
+          field = "";
+
+        } else if ((c === "\n" || c === "\r") && !quoted) {
+          if (c === "\r" && text[i + 1] === "\n") {
+            i++;
+          }
+
+          row.push(field);
+          field = "";
+
+          if (row.some(x => x.trim() !== "")) {
+            records.push(row);
+          }
+
+          row = [];
+
+        } else {
+          field += c;
+        }
+      }
+
+      row.push(field);
+
+      if (row.some(x => x.trim() !== "")) {
+        records.push(row);
+      }
+
+      if (records.length < 2) {
+        throw Error("Brak wierszy danych w CSV.");
+      }
+
+      const headers = records.shift();
+
+      return records.map(r => Object.fromEntries(
+        headers.map((h, i) => [h, r[i] ?? ""])
+      ));
+    }
+
+    // Rozpoznawanie daty.
+    function parseDate(v) {
+      if (v instanceof Date && !isNaN(v)) {
+        return [
+          v.getFullYear(),
+          v.getMonth() + 1,
+          v.getDate()
+        ];
+      }
+
+      if (typeof v === "number" && Number.isFinite(v)) {
+        const d = new Date(
+          Date.UTC(1899, 11, 30) + Math.floor(v) * 86400000
+        );
+
+        return [
+          d.getUTCFullYear(),
+          d.getUTCMonth() + 1,
+          d.getUTCDate()
+        ];
+      }
+
+      const t = String(v ?? "").trim();
+
+      let m = t.match(
+        /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})(?:\s.*)?$/
+      );
+
+      let a = m
+        ? [+m[3], +m[2], +m[1]]
+        : null;
+
+      if (!a) {
+        m = t.match(
+          /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T].*)?$/
+        );
+
+        if (m) {
+          a = [+m[1], +m[2], +m[3]];
+        }
+      }
+
+      if (!a) return null;
+
+      const d = new Date(
+        Date.UTC(a[0], a[1] - 1, a[2])
+      );
+
+      return (
+        d.getUTCFullYear() === a[0] &&
+        d.getUTCMonth() + 1 === a[1] &&
+        d.getUTCDate() === a[2]
+      )
+        ? a
+        : null;
+    }
+
+    // Miesiąc oraz numer tygodnia według ISO.
+    function dateInfo(v) {
+      const a = parseDate(v);
+
+      if (!a) {
+        return {
+          month: null,
+          week: null
+        };
+      }
+
+      const d = new Date(
+        Date.UTC(a[0], a[1] - 1, a[2])
+      );
+
+      const month =
+        `${a[0]}-${String(a[1]).padStart(2, "0")}`;
+
+      d.setUTCDate(
+        d.getUTCDate() + 4 - (d.getUTCDay() || 7)
+      );
+
+      const year = d.getUTCFullYear();
+
+      const first = new Date(
+        Date.UTC(year, 0, 1)
+      );
+
+      const week = Math.ceil(
+        ((d - first) / 86400000 + 1) / 7
+      );
+
+      return {
+        month,
+        week: `${year}-W${String(week).padStart(2, "0")}`
+      };
+    }
+
+    // Grupowanie po partno i Pick Zone.
+    function aggregate(rows) {
+      const map = new Map();
+
+      for (const r of rows) {
+        const key = JSON.stringify([
+          r.partno,
+          r.zone
+        ]);
+
+        if (!map.has(key)) {
+          map.set(key, {
+            partno: r.partno,
+            zone: r.zone,
+            distance: 0,
+            tasks: 0
+          });
+        }
+
+        const x = map.get(key);
+
+        x.distance += r.distance;
+        x.tasks += r.tasks;
+      }
+
+      return [...map.values()];
+    }
+
+    // Uzupełnienie filtrów.
+    function setupFilters() {
+      const months = [
+        ...new Set(
+          SOURCE.map(r => r.month).filter(Boolean)
+        )
+      ].sort();
+
+      const weeks = [
+        ...new Set(
+          SOURCE.map(r => r.week).filter(Boolean)
+        )
+      ].sort();
+
+      el("months").innerHTML = months
+        .map(m => `<option value="${m}">${m}</option>`)
+        .join("");
+
+      el("weeks").innerHTML = weeks
+        .map(w => `
+          <option value="${w}">
+            Tydzień ${Number(w.slice(-2))} / ${w.slice(0, 4)}
+          </option>
+        `)
+        .join("");
+    }
+
+    function filterDescription() {
+      const months = [
+        ...el("months").selectedOptions
+      ].map(o => o.value);
+
+      const weeks = [
+        ...el("weeks").selectedOptions
+      ].map(o => o.value);
+
+      return {
+        months: months.length
+          ? months.join(", ")
+          : "Wszystkie",
+
+        weeks: weeks.length
+          ? weeks.join(", ")
+          : "Wszystkie"
+      };
+    }
+
+    function applyFilters() {
+      const months = [
+        ...el("months").selectedOptions
+      ].map(o => o.value);
+
+      const weeks = [
+        ...el("weeks").selectedOptions
+      ].map(o => o.value);
+
+      const filtered = SOURCE.filter(r =>
+        (!months.length || months.includes(r.month)) &&
+        (!weeks.length || weeks.includes(r.week))
+      );
+
+      DATA = aggregate(filtered);
+
+      const invalid = SOURCE.filter(
+        r => !r.month
+      ).length;
+
+      el("filterStatus").textContent =
+        `Wybrano ${filtered.length} z ${SOURCE.length} wierszy. ` +
+        `Wiersze bez poprawnej daty: ${invalid}` +
+        (
+          invalid
+            ? " (uwzględniane tylko bez filtrów daty)"
+            : ""
+        ) +
+        ".";
+
+      PLAN = [];
+      RESULT = null;
+
+      if (!DATA.length) {
+        clearResults();
+
+        el("filterStatus").textContent +=
+          " Brak danych dla wybranych filtrów.";
+
+        return;
+      }
+
+      initialize();
+    }
+
+    function resetFilters() {
+      for (const o of el("months").options) {
+        o.selected = false;
+      }
+
+      for (const o of el("weeks").options) {
+        o.selected = false;
+      }
+
+      applyFilters();
+    }
+
+    function clearResults() {
+      el("zone").innerHTML =
+        '<option value="ALL">Cały magazyn</option>';
+
+      el("zones").innerHTML = "";
+      el("plan").innerHTML = "";
+
+      el("summary").textContent =
+        "Brak danych dla wybranych filtrów.";
+
+      el("info").textContent = "";
+      el("progressBar").style.width = "0";
+
+      [
+        "articles",
+        "distance",
+        "tasks",
+        "kpi",
+        "scopeKpi",
+        "targetDisplay",
+        "required",
+        "resultKpi",
+        "changeCount",
+        "goalStatus"
+      ].forEach(id => {
+        el(id).textContent = "—";
+      });
+    }
+
+    // Rozpoznawanie kolumn.
+    function normalizeData(raw) {
+      if (!raw.length) {
+        throw Error("Brak danych.");
+      }
+
+      const headers = Object.keys(raw[0]);
+
+      const find = variants => headers.find(
+        h => variants.includes(norm(h))
+      );
+
+      const cPart = find([
+        "partno",
+        "article"
+      ]);
+
+      const cZone = find([
+        "pickzone"
+      ]);
+
+      const cDist = find([
+        "sumaelementowdlprzejazdu",
+        "dlprzejazdu",
+        "sumadlprzejazdu"
+      ]);
+
+      const cTasks = find([
+        "liczbaelementowtaleja",
+        "taleja",
+        "liczbataleja"
+      ]);
+
+      if (!cPart || !cZone || !cDist || !cTasks) {
+        throw Error(
+          "Nie rozpoznano kolumn. Nagłówki: " +
+          headers.join(" | ")
+        );
+      }
+
+      const cDate = find([
+        "datregkopia",
+        "datreg",
+        "data",
+        "datarejestracji",
+        "regdate"
+      ]);
+
+      const rows = [];
+      let skipped = 0;
+
+      for (const r of raw) {
+        const partno = String(
+          r[cPart] ?? ""
+        ).trim();
+
+        const zone = String(
+          r[cZone] ?? ""
+        ).trim() || "(BRAK STREFY)";
+
+        const distance = numeric(r[cDist]);
+        const tasks = numeric(r[cTasks]);
+
+        if (
+          !partno ||
+          !Number.isFinite(distance) ||
+          !Number.isFinite(tasks) ||
+          distance < 0 ||
+          tasks < 0
+        ) {
+          skipped++;
+          continue;
+        }
+
+        rows.push({
+          partno,
+          zone,
+          distance,
+          tasks,
+          ...dateInfo(cDate ? r[cDate] : null)
+        });
+      }
+
+      if (!rows.length) {
+        throw Error(
+          "Nie znaleziono poprawnych rekordów."
+        );
+      }
+
+      return {
+        rows,
+        skipped,
+        hasDate: !!cDate
+      };
+    }
+
+    // Odczyt pliku.
+    async function readFile(file) {
+      const name = file.name.toLowerCase();
+
+      if (name.endsWith(".csv")) {
+        const bytes = await file.arrayBuffer();
+
+        let text = new TextDecoder("utf-8").decode(bytes);
+
+        if (text.includes("\uFFFD")) {
+          text = new TextDecoder("windows-1250").decode(bytes);
+        }
+
+        return parseCSV(text);
+      }
+
+      if (typeof XLSX === "undefined") {
+        throw Error(
+          "Biblioteka Excel nie jest dostępna. Spróbuj CSV."
+        );
+      }
+
+      const bytes = await file.arrayBuffer();
+
+      const wb = XLSX.read(bytes, {
+        type: "array"
+      });
+
+      return XLSX.utils.sheet_to_json(
+        wb.Sheets[wb.SheetNames[0]],
+        {
+          defval: "",
+          raw: false
+        }
+      );
+    }
+
+    // Import po wyborze pliku.
+    el("file").addEventListener("change", async e => {
+      const file = e.target.files[0];
+
+      if (!file) return;
+
+      try {
+        el("status").textContent = "Wczytywanie...";
+
+        const raw = await readFile(file);
+        const parsed = normalizeData(raw);
+
+        SOURCE = parsed.rows;
+
+        setupFilters();
+        applyFilters();
+
+        el("status").textContent =
+          `Zaimportowano ${SOURCE.length} wierszy. ` +
+          `Pominięte rekordy: ${parsed.skipped}.` +
+          (
+            parsed.hasDate
+              ? ""
+              : " Nie znaleziono kolumny daty – filtry daty są niedostępne."
+          );
+
+      } catch (err) {
+        el("status").textContent =
+          "Błąd: " + err.message;
+
+        console.error(err);
+      }
+    });
+
+    // Dane demonstracyjne.
+    function loadDemo() {
+      const sample = [
+        ["20426808", "DL", 85, 8],
+        ["00458206", "PN", 80, 12],
+        ["30489490", "SL", 73, 5],
+        ["00223878", "SW", 72, 4],
+        ["00311059", "SL", 68, 5],
+        ["30551236", "SW", 62, 5],
+        ["40559487", "SW", 59, 5],
+        ["10572876", "LO", 54, 6],
+        ["10458220", "PN", 48, 8],
+        ["70213569", "MT", 46, 7],
+        ["30426836", "R1", 44, 4],
+        ["10277984", "FN", 42, 6],
+        ["30183989", "PN", 42, 10],
+        ["60559486", "SW", 42, 3],
+        ["50551235", "SW", 38, 3],
+        ["00417621", "SL", 37, 9]
+      ];
+
+      SOURCE = sample.map(
+        ([partno, zone, distance, tasks]) => ({
+          partno,
+          zone,
+          distance,
+          tasks,
+          month: null,
+          week: null
+        })
+      );
+
+      setupFilters();
+      applyFilters();
+
+      el("status").textContent =
+        "Wczytano dane demonstracyjne bez dat.";
+    }
+
+    function stats(rows) {
+      const distance = rows.reduce(
+        (s, r) => s + r.distance,
+        0
+      );
+
+      const tasks = rows.reduce(
+        (s, r) => s + r.tasks,
+        0
+      );
+
+      return {
+        distance,
+        tasks,
+
+        articles: new Set(
+          rows.map(r => r.partno)
+        ).size,
+
+        kpi: tasks > 0
+          ? distance / tasks
+          : NaN
+      };
+    }
+
+    function groupZones() {
+      const groups = new Map();
+
+      for (const r of DATA) {
+        if (!groups.has(r.zone)) {
+          groups.set(r.zone, []);
+        }
+
+        groups.get(r.zone).push(r);
+      }
+
+      return [...groups]
+        .map(([zone, rows]) => ({
+          zone,
+          ...stats(rows)
+        }))
+        .sort((a, b) => b.distance - a.distance);
+    }
+
+    function scopeRows() {
+      return SCOPE === "ALL"
+        ? DATA
+        : DATA.filter(r => r.zone === SCOPE);
+    }
+
+    function initialize() {
+      SCOPE = "ALL";
+
+      const zones = groupZones();
+      const select = el("zone");
+
+      select.innerHTML =
+        '<option value="ALL">Cały magazyn</option>';
+
+      zones.forEach(z => {
+        const option = document.createElement("option");
+
+        option.value = z.zone;
+        option.textContent = z.zone;
+
+        select.appendChild(option);
+      });
+
+      const current = stats(DATA).kpi;
+
+      const max = Number.isFinite(current)
+        ? Math.max(1, Math.ceil(current * 1.5))
+        : 1;
+
+      const target = Number.isFinite(current)
+        ? current * 0.8
+        : 0;
+
+      el("targetSlider").max = max;
+      el("targetSlider").value = target;
+
+      el("targetInput").value = target.toFixed(2);
+
+      render();
+    }
+
+    function changeZone() {
+      SCOPE = el("zone").value;
+
+      const current = stats(scopeRows()).kpi;
+
+      if (Number.isFinite(current)) {
+        el("targetSlider").max =
+          Math.max(1, Math.ceil(current * 1.5));
+
+        el("targetSlider").value = current * 0.8;
+
+        el("targetInput").value =
+          (current * 0.8).toFixed(2);
+      }
+
+      render();
+    }
+
+    function selectZone(zone) {
+      el("zone").value = zone;
+      changeZone();
+    }
+
+    function sliderChanged() {
+      el("targetInput").value =
+        el("targetSlider").value;
+
+      calculate();
+    }
+
+    function inputChanged() {
+      const v = numeric(
+        el("targetInput").value
+      );
+
+      if (!Number.isFinite(v) || v < 0) {
+        return;
+      }
+
+      el("targetSlider").max = Math.max(
+        Number(el("targetSlider").max),
+        Math.ceil(v),
+        1
+      );
+
+      el("targetSlider").value = v;
+
+      calculate();
+    }
+
+    function calculate() {
+      if (!DATA.length) return;
+
+      const rows = scopeRows();
+      const base = stats(rows);
+
+      const target = numeric(
+        el("targetInput").value
+      );
+
+      if (!Number.isFinite(target) || target < 0) {
+        PLAN = [];
+        RESULT = null;
+        renderPlan();
+
+        el("info").textContent =
+          "Wpisz poprawny współczynnik.";
+
+        return;
+      }
+
+      if (base.tasks <= 0) {
+        PLAN = [];
+        RESULT = null;
+        renderPlan();
+
+        el("info").textContent =
+          "Nie można obliczyć KPI: suma TAleja wynosi zero.";
+
+        return;
+      }
+
+      const targetDistance =
+        target * base.tasks;
+
+      const required = Math.max(
+        0,
+        base.distance - targetDistance
+      );
+
+      // Ranking według największej sumy długości.
+      const ranked = [...rows].sort((a, b) =>
+        b.distance - a.distance ||
+        a.partno.localeCompare(b.partno)
+      );
+
+      let remaining = required;
+
+      PLAN = ranked.map(r => {
+        const reduction = Math.min(
+          r.distance,
+          Math.max(0, remaining)
+        );
+
+        remaining = Math.max(
+          0,
+          remaining - reduction
+        );
+
+        const newDistance = Math.max(
+          0,
+          r.distance - reduction
+        );
+
+        return {
+          ...r,
+
+          reduction,
+          newDistance,
+
+          oldKpi: r.tasks > 0
+            ? r.distance / r.tasks
+            : NaN,
+
+          newKpi: r.tasks > 0
+            ? newDistance / r.tasks
+            : NaN,
+
+          reductionPct: r.distance > 0
+            ? 100 * reduction / r.distance
+            : 0
+        };
+      });
+
+      const saved = PLAN.reduce(
+        (s, r) => s + r.reduction,
+        0
+      );
+
+      const newDistance =
+        base.distance - saved;
+
+      const projected =
+        newDistance / base.tasks;
+
+      const count = PLAN.filter(
+        r => r.reduction > 1e-8
+      ).length;
+
+      const achieved =
+        projected <= target + 1e-8;
+
+      const progress = required === 0
+        ? 100
+        : Math.min(100, 100 * saved / required);
+
+      RESULT = {
+        base,
+        target,
+        required,
+        saved,
+        newDistance,
+        projected,
+        count,
+        achieved,
+        zone: SCOPE
+      };
+
+      el("scopeKpi").textContent =
+        fmt(base.kpi);
+
+      el("targetDisplay").textContent =
+        fmt(target);
+
+      el("required").textContent =
+        fmt(required);
+
+      el("resultKpi").textContent =
+        fmt(projected);
+
+      el("changeCount").textContent =
+        fmt(count, 0);
+
+      el("goalStatus").textContent =
+        achieved
+          ? "OSIĄGNIĘTY*"
+          : "NIEOSIĄGNIĘTY";
+
+      el("goalStatus").className =
+        achieved
+          ? "good"
+          : "bad";
+
+      el("progressBar").style.width =
+        progress + "%";
+
+      el("info").textContent =
+        required === 0
+          ? "Aktualny współczynnik już spełnia wybrany cel."
+          : "*Cel osiągnięty matematycznie. Proponowane redukcje wymagają weryfikacji operacyjnej.";
+
+      el("summary").innerHTML = `
+        <p>
+          <b>Zakres:</b>
+          ${esc(SCOPE === "ALL" ? "Cały magazyn" : SCOPE)}
+        </p>
+
+        <p>
+          Aktualny KPI:
+          <b>${fmt(base.kpi)}</b>
+        </p>
+
+        <p>
+          Docelowy KPI:
+          <b>${fmt(target)}</b>
+        </p>
+
+        <p>
+          Wynik po zmianach:
+          <b>${fmt(projected)}</b>
+        </p>
+
+        <p>
+          Aktualna suma długości:
+          <b>${fmt(base.distance)}</b>
+        </p>
+
+        <p>
+          Planowana suma długości:
+          <b>${fmt(newDistance)}</b>
+        </p>
+
+        <p>
+          Wymagana redukcja:
+          <b>${fmt(required)}</b>
+        </p>
+
+        <p>
+          Liczba wytypowanych artykułów:
+          <b>${fmt(count, 0)}</b>
+        </p>
+
+        <p class="bad">
+          <b>Uwaga:</b> algorytm nie potwierdza, że takie skrócenie
+          tras jest fizycznie możliwe. W skrajnym przypadku może
+          proponować redukcję długości artykułu do zera.
+          Jest to wyłącznie matematyczny wariant osiągnięcia celu.
+        </p>
+      `;
+
+      renderPlan();
+    }
+
+    // Wspólny wybór danych dla tabeli i nowego eksportu.
+    function getVisiblePlanRows() {
+      const search = el("search")
+        .value
+        .trim()
+        .toLowerCase();
+
+      const filter = el("filter").value;
+      const limitValue = el("limit").value;
+
+      const filtered = PLAN.filter(r =>
+        r.partno.toLowerCase().includes(search) &&
+        (
+          filter === "all" ||
+          r.reduction > 1e-8
+        )
+      );
+
+      if (limitValue === "all") {
+        return filtered;
+      }
+
+      return filtered.slice(
+        0,
+        Number(limitValue)
+      );
+    }
+
+    function renderPlan() {
+      const rows = getVisiblePlanRows();
+
+      el("plan").innerHTML = rows.map(r => `
+        <tr>
+          <td>${esc(r.partno)}</td>
+          <td>${esc(r.zone)}</td>
+          <td>${fmt(r.distance)}</td>
+          <td>${fmt(r.tasks, 0)}</td>
+          <td>${fmt(r.oldKpi)}</td>
+          <td>${fmt(r.reduction)}</td>
+          <td>${fmt(r.newDistance)}</td>
+          <td>${fmt(r.newKpi)}</td>
+          <td>${fmt(r.reductionPct)}%</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderZones() {
+      const total = stats(DATA);
+
+      el("zones").innerHTML =
+        groupZones().map(z => `
+          <tr
+            class="clickable ${SCOPE === z.zone ? "selected" : ""}"
+            data-zone="${esc(z.zone)}"
+          >
+            <td>${esc(z.zone)}</td>
+            <td>${fmt(z.articles, 0)}</td>
+            <td>${fmt(z.distance, 0)}</td>
+            <td>${fmt(z.tasks, 0)}</td>
+            <td>${fmt(z.kpi)}</td>
+            <td>
+              ${fmt(
+                total.distance
+                  ? 100 * z.distance / total.distance
+                  : 0
+              )}%
+            </td>
+          </tr>
+        `).join("");
+
+      el("zones")
+        .querySelectorAll("tr")
+        .forEach(tr => {
+          tr.addEventListener("click", () => {
+            selectZone(tr.dataset.zone);
+          });
+        });
+    }
+
+    function render() {
+      if (!DATA.length) return;
+
+      const s = stats(DATA);
+
+      el("articles").textContent =
+        fmt(s.articles, 0);
+
+      el("distance").textContent =
+        fmt(s.distance, 0);
+
+      el("tasks").textContent =
+        fmt(s.tasks, 0);
+
+      el("kpi").textContent =
+        fmt(s.kpi);
+
+      renderZones();
+      calculate();
+    }
+
+    // Eksport analizy Pick Zone.
+    function exportZones() {
+      if (!DATA.length) {
+        alert(
+          "Najpierw zaimportuj dane i wybierz zakres zawierający wyniki."
+        );
+        return;
+      }
+
+      if (typeof XLSX === "undefined") {
+        alert(
+          "Biblioteka Excel jest niedostępna. Sprawdź połączenie z internetem."
+        );
+        return;
+      }
+
+      const f = filterDescription();
+      const total = stats(DATA);
+
+      const rows = [[
+        "Pick Zone",
+        "Unikalne partno",
+        "Suma długości",
+        "Liczba TAleja",
+        "KPI",
+        "Udział długości %"
+      ]];
+
+      for (const z of groupZones()) {
+        rows.push([
+          z.zone,
+          z.articles,
+          z.distance,
+          z.tasks,
+
+          Number.isFinite(z.kpi)
+            ? z.kpi
+            : null,
+
+          total.distance
+            ? z.distance / total.distance
+            : 0
+        ]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      ws["!cols"] = [
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 20 }
+      ];
+
+      for (let i = 2; i <= rows.length; i++) {
+        if (ws["F" + i]) {
+          ws["F" + i].z = "0.00%";
+        }
+      }
+
+      ws["!autofilter"] = {
+        ref: `A1:F${rows.length}`
+      };
+
+      const wb = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        wb,
+        ws,
+        "Pick Zone"
+      );
+
+      const meta = XLSX.utils.aoa_to_sheet([
+        ["Filtr", "Wartość"],
+        ["Miesiące", f.months],
+        ["Tygodnie", f.weeks]
+      ]);
+
+      meta["!cols"] = [
+        { wch: 20 },
+        { wch: 65 }
+      ];
+
+      XLSX.utils.book_append_sheet(
+        wb,
+        meta,
+        "Filtry"
+      );
+
+      XLSX.writeFile(
+        wb,
+        "REPL_Analiza_Pick_Zone.xlsx"
+      );
+    }
+
+    // Eksport planu optymalizacji.
+    function exportExcel() {
+      if (!RESULT) {
+        alert(
+          "Najpierw zaimportuj dane i przelicz symulację."
+        );
+        return;
+      }
+
+      if (typeof XLSX === "undefined") {
+        alert(
+          "Biblioteka XLSX jest niedostępna."
+        );
+        return;
+      }
+
+      const r = RESULT;
+      const wb = XLSX.utils.book_new();
+
+      const summary = [
+        ["Parametr", "Wartość"],
+        ["Zakres", r.zone],
+        ["Miesiące", filterDescription().months],
+        ["Tygodnie", filterDescription().weeks],
+        ["Aktualny KPI", r.base.kpi],
+        ["Docelowy KPI", r.target],
+        ["Wynik symulacji", r.projected],
+        ["Suma długości przed", r.base.distance],
+        ["Suma długości po", r.newDistance],
+        ["Liczba TAleja", r.base.tasks],
+        ["Wymagana redukcja", r.required],
+        ["Wytypowane artykuły", r.count],
+        ["Status", "Symulacja matematyczna"]
+      ];
+
+      const details = [[
+        "partno",
+        "Pick Zone",
+        "Obecna długość",
+        "Liczba TAleja",
+        "Obecny KPI",
+        "Wymagana redukcja",
+        "Nowa długość",
+        "Nowy KPI",
+        "Zmiana %",
+        "Status"
+      ]];
+
+      for (const x of PLAN.filter(
+        x => x.reduction > 1e-8
+      )) {
+        details.push([
+          x.partno,
+          x.zone,
+          x.distance,
+          x.tasks,
+
+          Number.isFinite(x.oldKpi)
+            ? x.oldKpi
+            : "",
+
+          x.reduction,
+          x.newDistance,
+
+          Number.isFinite(x.newKpi)
+            ? x.newKpi
+            : "",
+
+          x.reductionPct,
+          "Do weryfikacji operacyjnej"
+        ]);
+      }
+
+      const zoneRows = [[
+        "Pick Zone",
+        "Unikalne partno",
+        "Suma długości",
+        "Liczba TAleja",
+        "KPI"
+      ]];
+
+      for (const z of groupZones()) {
+        zoneRows.push([
+          z.zone,
+          z.articles,
+          z.distance,
+          z.tasks,
+
+          Number.isFinite(z.kpi)
+            ? z.kpi
+            : ""
+        ]);
+      }
+
+      const assumptions = [
+        ["Założenie", "Opis"],
+
+        [
+          "Metoda",
+          "Automatyczna alokacja wymaganej redukcji"
+        ],
+
+        [
+          "Ranking",
+          "Malejąca suma długości artykułu"
+        ],
+
+        [
+          "Liczba TAleja",
+          "Stała podczas symulacji"
+        ],
+
+        [
+          "Ograniczenia lokalizacyjne",
+          "Brak danych"
+        ],
+
+        [
+          "Wykonalność",
+          "Niepotwierdzona"
+        ],
+
+        [
+          "Znaczenie planu",
+          "Matematyczny cel redukcji, nie zmiana WMS"
+        ]
+      ];
+
+      function addSheet(name, rows) {
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+
+        ws["!cols"] = rows[0].map(h => ({
+          wch: Math.min(
+            42,
+            Math.max(16, String(h).length + 3)
+          )
+        }));
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          ws,
+          name
+        );
+
+        return ws;
+      }
+
+      addSheet(
+        "Podsumowanie",
+        summary
+      );
+
+      const ws = addSheet(
+        "Plan zmian",
+        details
+      );
+
+      addSheet(
+        "Pick Zone",
+        zoneRows
+      );
+
+      addSheet(
+        "Założenia",
+        assumptions
+      );
+
+      // Zachowanie zer wiodących w partno.
+      for (let i = 2; i <= details.length; i++) {
+        const cell = ws["A" + i];
+
+        if (cell) {
+          cell.t = "s";
+          cell.v = String(cell.v);
+          cell.z = "@";
+        }
+      }
+
+      XLSX.writeFile(
+        wb,
+        "REPL_Plan_Optymalizacji.xlsx"
+      );
+    }
+
+    // NOWOŚĆ: eksport danych widocznych w tabeli z punktu 5.
+    function exportVisiblePlan() {
+      if (!PLAN.length) {
+        alert(
+          "Najpierw zaimportuj dane i przelicz symulację."
+        );
+        return;
+      }
+
+      if (typeof XLSX === "undefined") {
+        alert(
+          "Biblioteka Excel jest niedostępna. Sprawdź połączenie z internetem."
+        );
+        return;
+      }
+
+      const visibleRows = getVisiblePlanRows();
+
+      if (!visibleRows.length) {
+        alert(
+          "Brak danych do eksportu dla wybranych ustawień."
+        );
+        return;
+      }
+
+      const rows = [[
+        "partno",
+        "Pick Zone",
+        "Obecna długość",
+        "Liczba TAleja",
+        "Obecny KPI",
+        "Redukcja długości",
+        "Nowa długość",
+        "Nowy KPI",
+        "Zmiana %"
+      ]];
+
+      for (const r of visibleRows) {
+        rows.push([
+          String(r.partno),
+          r.zone,
+          r.distance,
+          r.tasks,
+
+          Number.isFinite(r.oldKpi)
+            ? r.oldKpi
+            : "",
+
+          r.reduction,
+          r.newDistance,
+
+          Number.isFinite(r.newKpi)
+            ? r.newKpi
+            : "",
+
+          r.reductionPct / 100
+        ]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      ws["!cols"] = [
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 16 }
+      ];
+
+      ws["!autofilter"] = {
+        ref: `A1:I${rows.length}`
+      };
+
+      // Zachowanie zer wiodących i formatu procentowego.
+      for (let i = 2; i <= rows.length; i++) {
+        const partnoCell = ws["A" + i];
+
+        if (partnoCell) {
+          partnoCell.t = "s";
+          partnoCell.v = String(partnoCell.v);
+          partnoCell.z = "@";
+        }
+
+        const percentCell = ws["I" + i];
+
+        if (percentCell) {
+          percentCell.z = "0.00%";
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        wb,
+        ws,
+        "Tabela artykułów"
+      );
+
+      XLSX.writeFile(
+        wb,
+        "REPL_Tabela_Artykulow.xlsx"
+      );
+    }
+
+    // Czyszczenie danych.
+    function clearData() {
+      SOURCE = [];
+      DATA = [];
+      PLAN = [];
+      RESULT = null;
+      SCOPE = "ALL";
+
+      setupFilters();
+
+      el("filterStatus").textContent =
+        "Wczytaj dane, aby wybrać daty.";
+
+      el("file").value = "";
+
+      el("zone").innerHTML =
+        '<option value="ALL">Cały magazyn</option>';
+
+      el("zones").innerHTML = "";
+      el("plan").innerHTML = "";
+
+      el("status").textContent =
+        "Wybierz plik z danymi REPL.";
+
+      el("summary").textContent =
+        "Zaimportuj dane.";
+
+      el("info").textContent = "";
+
+      el("progressBar").style.width = "0";
+
+      [
+        "articles",
+        "distance",
+        "tasks",
+        "kpi",
+        "scopeKpi",
+        "targetDisplay",
+        "required",
+        "resultKpi",
+        "changeCount",
+        "goalStatus"
+      ].forEach(id => {
+        el(id).textContent = "—";
+      });
+    }
+  </script>
+
 </body>
 </html>
